@@ -25,7 +25,7 @@ def TrainModel(X_train, Y_train, kernelString, kernelDegree=2, gammaValue=0.05, 
     svmModel = svm.SVC(C=cValue, cache_size=cache_size, class_weight=None, coef0=coef0Value,
                        decision_function_shape=None, degree=kernelDegree, gamma=gammaValue, 
                        kernel=kernelString, max_iter=-1, probability=enableProbability, 
-                       random_state=None, shrinking=shrinking, tol=tol, verbose=False)
+                       random_state=None, shrinking=shrinking, tol=tol, verbose=True)
     
     # Train the model   
     startTime = time.time() 
@@ -125,7 +125,7 @@ def SerializeToPkl(fileName, svmModel, mu, sigma):
 
 #--------------------------------------------------------------------------------------------------
 
-def LoadFromPkl(fileName, svmModel, mu, sigma):
+def LoadFromPkl(fileName):
     with open(fileName, 'r') as f:
         svmModel = pickle.load(f)
         mu       = pickle.load(f)

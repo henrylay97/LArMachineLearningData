@@ -8,6 +8,7 @@ from sklearn import preprocessing
 from datetime import datetime
 
 import numpy as np
+import scipy.stats as sci
 import sys
 import time
 import pickle
@@ -19,33 +20,38 @@ import math
 
 from PandoraMVA import *
 
-def DrawVariables(X, Y):
-    plot_colors = ['r', 'g', 'b']
+def DrawVariables(X, Y, labels, logY=True, class_names=['Signal', 'Background']):
+    plot_colors = ['b', 'r']
     plot_step = 1.0
-    class_names = ['Beam Particle', 'Background Beam Particle', 'Cosmic Rays']
-    signal_definition = [2, 1, 0]
+    signal_definition = [1, 0]
 
     num_rows, num_cols = X.shape
     for feature in range(0, num_cols):
-        plot_range = (X[:,feature].min(), X[:,feature].max()) 
+        plot_range = (np.quantile(X[:,feature], 0.01), np.quantile(X[:,feature], 0.99))
 
+        # print (len(X[:,feature]), plot_range, Y)
         for i, n, g in zip(signal_definition, class_names, plot_colors):
+            # print (len(X[:,feature]), Y[0]==0)
+            # print (len(X[:,feature][Y==0]))
+            # print (len(X[:,feature][Y==1]))
             entries, bins, patches = plt.hist(X[:,feature][Y == i],
-                                              bins=50,
-                                              range=plot_range,
-                                              facecolor=g,
-                                              label='Class %s' % n,
-                                              alpha=.5,
-                                              edgecolor='k')
-        plt.yscale('log')
+                    bins=50,
+                    range=plot_range,
+                    facecolor=g,
+                    label=n,
+                    alpha=.5,
+                    edgecolor='k',
+                    density=True)
+            if (logY):
+                plt.yscale('log')
         x1, x2, y1, y2 = plt.axis()
         plt.axis((x1, x2, y1, y2 * 1.1))
-        plt.legend(loc='upper right')
+        plt.legend()
         plt.ylabel('Entries')
-        plt.xlabel('Variable')
+        plt.xlabel(labels[feature])
 
         plt.tight_layout()
-        plotName = 'Feature_' + str(feature) + '.pdf'
+        plotName = 'Feature_' + labels[feature] + '.pdf'
         plt.savefig(plotName)
         plt.show()
         plt.close()
@@ -62,8 +68,8 @@ def Correlation(X, Y):
         elif Y[idx] == 0:
             background.append(x)
 
-    sig = pd.DataFrame(data=signal) 
-    bkg = pd.DataFrame(data=background) 
+    sig = pd.DataFrame(data=signal)
+    bkg = pd.DataFrame(data=background)
 
     # Compute the correlation matrix
     corrSig = sig.corr()
@@ -78,7 +84,7 @@ def Correlation(X, Y):
     # Signal Plot
     f, ax = plt.subplots(figsize=(11, 9))
     sns.heatmap(corrSig, mask=mask, cmap=jet, vmax=1.0, vmin=-1.0, center=0,
-                square=True, linewidths=.5, cbar_kws={"shrink": .5})
+            square=True, linewidths=.5, cbar_kws={"shrink": .5})
 
     plotName = 'CorrelationMatrixSignal.pdf'
     plt.savefig(plotName)
@@ -88,7 +94,7 @@ def Correlation(X, Y):
     # Background Plot
     f, ax = plt.subplots(figsize=(11, 9))
     sns.heatmap(corrBkg, mask=mask, cmap=jet, vmax=1.0, vmin=-1.0, center=0,
-                square=True, linewidths=.5, cbar_kws={"shrink": .5})
+            square=True, linewidths=.5, cbar_kws={"shrink": .5})
 
     plotName = 'CorrelationMatrixBackground.pdf'
     plt.savefig(plotName)
@@ -97,15 +103,15 @@ def Correlation(X, Y):
 
 #--------------------------------------------------------------------------------------------------
 
-def TrainAdaBoostClassifer(X_train, Y_train, n_estimatorsValue=3, max_depthValue=2, learning_rateValue=1.0, 
-                           algorithmValue='SAMME', random_stateValue=None):
+def TrainAdaBoostClassifer(X_train, Y_train, n_estimatorsValue=3, max_depthValue=2, learning_rateValue=1.0,
+        algorithmValue='SAMME', random_stateValue=42):
     # Load the BDT object
-    bdtModel = AdaBoostClassifier(DecisionTreeClassifier(max_depth=max_depthValue), 
-                                  n_estimators=n_estimatorsValue, learning_rate=learning_rateValue, 
-                                  algorithm=algorithmValue, random_state=random_stateValue) 
-    
-    # Train the model   
-    startTime = time.time() 
+    bdtModel = AdaBoostClassifier(DecisionTreeClassifier(max_depth=max_depthValue),
+            n_estimators=n_estimatorsValue, learning_rate=learning_rateValue,
+            algorithm=algorithmValue, random_state=random_stateValue)
+
+    # Train the model
+    startTime = time.time()
     bdtModel.fit(X_train, Y_train)
     endTime = time.time()
 
@@ -113,14 +119,14 @@ def TrainAdaBoostClassifer(X_train, Y_train, n_estimatorsValue=3, max_depthValue
 
 #--------------------------------------------------------------------------------------------------
 
-def WriteXmlFile(filePath, adaBoostClassifer):
+def WriteXmlFile(filePath, adaBoostClassifer, BDTName):
     datetimeString = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
     with open(filePath, "a") as modelFile:
         indentation = 0
         indentation = OpenXmlTag(modelFile,    'AdaBoostDecisionTree', indentation)
-        WriteXmlFeature(modelFile, 'BeamParticleId', 'Name', indentation)
+        WriteXmlFeature(modelFile, BDTName, 'Name', indentation)
         WriteXmlFeature(modelFile, datetimeString, 'Timestamp', indentation)
-        
+
         for idx, estimator in enumerate(adaBoostClassifer.estimators_):
             boostWeight = adaBoostClassifer.estimator_weights_[idx]
             WriteDecisionTree(estimator, modelFile, indentation, idx, boostWeight)
@@ -152,7 +158,7 @@ def Recurse(node, parentnode, depth, position, indentation, decisionTree, modelF
             WriteXmlFeature(modelFile, 'true', 'Outcome', indentation)
         else:
             WriteXmlFeature(modelFile, 'false', 'Outcome', indentation)
-        
+
         indentation = CloseXmlTag(modelFile, 'Node', indentation)
 
 #--------------------------------------------------------------------------------------------------
@@ -172,13 +178,13 @@ def WriteDecisionTree(estimator, modelFile, indentation, treeIdx, boostWeight):
 def SerializeToPkl(fileName, model):
     with open(fileName, 'wb') as f:
         pickle.dump(model, f)
-    
+
 #--------------------------------------------------------------------------------------------------
-    
+
 def LoadFromPkl(fileName):
     with open(fileName, 'rb') as f:
-        model = pickle.load(f) 
-        
+        model = pickle.load(f)
+
         return model
 
 #--------------------------------------------------------------------------------------------------
@@ -195,16 +201,17 @@ def FindOptimalSignificanceCut(bdtModel, X_train, Y_train, parameters):
 
     for i, n, g in zip(parameters['SignalDefinition'], parameters['ClassNames'], parameters['PlotColors']):
         entries, bins, patches = ax.hist(train_results[Y_train == i],
-                                         bins = parameters['nBins'],
-                                         range = (-1,1),
-                                         facecolor = g,
-                                         label = 'Class %s' % n,
-                                         alpha = .5,
-                                         edgecolor = 'k')
+                bins = parameters['nBins'],
+                range = (-1,1),
+                facecolor = g,
+                label = 'Class %s' % n,
+                alpha = .5,
+                edgecolor = 'k')
         if i == 1:
             sigEntries = entries
         elif i == 0:
             bkgEntries = entries
+
 
     nSigEntries = sum(sigEntries)
     nBkgEntries = sum(bkgEntries)
@@ -232,53 +239,82 @@ def FindOptimalSignificanceCut(bdtModel, X_train, Y_train, parameters):
             optimalSigEff = sigEff
             optimalBkgRej = bkgRej
 
-    print('Optimal signif : ' + str(optimalSignif))
-    print('Optimal sigEff : ' + str(optimalSigEff))
-    print('Optimal bkgRej : ' + str(optimalBkgRej))
-    print('Optimal binCut : ' + str(optimalBinCut))
-    print('Optimal scoreCut : ' + str(round(optimalScoreCut,2)))
+#    print('Optimal signif : ' + str(optimalSignif))
+#    print('Optimal sigEff : ' + str(optimalSigEff))
+#    print('Optimal bkgRej : ' + str(optimalBkgRej))
+#    print('Optimal binCut : ' + str(optimalBinCut))
+#    print('Optimal scoreCut : ' + str(round(optimalScoreCut,2)))
     parameters['OptimalBinCut'] = optimalBinCut
     parameters['OptimalScoreCut'] = optimalScoreCut
+    plt.close()
 
 #--------------------------------------------------------------------------------------------------
 
-def PlotBdtScores(bdtModel, X_test, Y_test, momentum, parameters):
+def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters):
     # Testing BDT Using Remainder of Training Sample
     test_results = bdtModel.decision_function(X_test)
+    train_results = bdtModel.decision_function(X_train)
+
+    minRange = min(min(test_results),min(train_results))
+    maxRange = max(max(test_results),max(train_results))
+
+    test_results_signal = test_results[Y_test==1]
+    train_results_signal = train_results[Y_train==1]
+    test_results_background = test_results[Y_test==0]
+    train_results_background = train_results[Y_train==0]
+
     fig, ax = plt.subplots()
 
-    ax.set_title(str(momentum) + " Gev Beam Cosmic")
-   
+    ax.set_title(title)
+
     sigEff = 0
     bkgRej = 0
-    
+
     for i, n, g in zip(parameters['SignalDefinition'], parameters['ClassNames'], parameters['PlotColors']):
         entries, bins, patches = ax.hist(test_results[Y_test == i],
-                                         bins = parameters['nBins'],
-                                         range = (-1,1),
-                                         facecolor = g,
-                                         label='Class %s' % n,
-                                         alpha=.5,
-                                         edgecolor='k')
-        if i == 1:                       
+                bins = parameters['nBins'],
+                range = (-1,1),
+                facecolor = g,
+                label='%s' % n,
+                alpha=.5,
+                density=True,
+                edgecolor='k')
+
+        counts,bin_edges = np.histogram(train_results[Y_train == i],
+                range = (-1,1), bins = parameters['nBins'], density=True)
+
+        bin_centres = (bin_edges[:-1] + bin_edges[1:])/2.
+        ax.errorbar(bin_centres, counts, fmt='o', color=g)
+
+        if i == 1:
             nEntries = sum(entries)
             nEntriesPassing = sum(entries[parameters['OptimalBinCut']:])
             sigEff = nEntriesPassing/nEntries
-        elif i == 0: 
+        elif i == 0:
             nEntries = sum(entries)
             nEntriesFailing = sum(entries[:parameters['OptimalBinCut']])
             bkgRej = nEntriesFailing/nEntries
-           
-    plt.text(0.75, 0.75, "Sig Eff {:.4%}, \nBkg Rej {:.4%}, \nScore Cut {:.2}".format(sigEff,bkgRej,parameters['OptimalScoreCut']),
+
+    signalKSTest, ksSig = sci.ks_2samp(test_results_signal, train_results_signal)
+    backgroundKSTest, ksBck = sci.ks_2samp(test_results_background, train_results_background)
+
+    plt.text(0.75, 0.75, "Sig Eff {:.4%}, \nBkg Rej {:.4%}, \nScore Cut {:.2},\n Signal P value {:.2}, \n Background P value {:.2} "
+            .format(sigEff,bkgRej,parameters['OptimalScoreCut'], ksSig, ksBck),
             horizontalalignment='center',
             verticalalignment='center',
-            transform = ax.transAxes) 
+            transform = ax.transAxes)
 
-    plt.yscale('log')
     x1, x2, y1, y2 = plt.axis()
     plt.axis((x1, x2, y1, y2 * 1.1))
     plt.legend(loc='upper right')
     plt.ylabel('Samples')
     plt.xlabel('Score')
     plt.tight_layout()
-    plt.savefig('TrainingBdt_NTrees_' + str(parameters['nTrees']) + '_TreeDepth_' + str(parameters['TreeDepth']) + '_' + str(momentum) + '_GeV_Beam_Cosmics.pdf')
+    plt.savefig(title + '_NTrees_' + str(parameters['nTrees']) + '_TreeDepth_' + str(parameters['TreeDepth']) + '.png')
+    plt.show()
+    plt.close()
+
+    print("Signal Efficiencey: "+str(sigEff)+" and background rejection: "+str(bkgRej))
+    print("KS Signal:     "+str(signalKSTest)+" with P value: "+str(ksSig))
+    print("KS BackGround: "+str(backgroundKSTest)+" with P value: "+str(ksBck))
+    return ksSig, ksBck

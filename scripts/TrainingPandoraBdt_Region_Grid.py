@@ -46,10 +46,10 @@ if __name__=="__main__":
       X_org, Y_org = SplitTrainingSet(trainSet, nFeatures)
 
       # Train the BDT
-      X, Y = Randomize(X_org, Y_org)
+      X, Y = Randomize(X_org, Y_org, True)
       X_train, Y_train, X_test, Y_test = Sample(X, Y, trainTestSplit)
 
-      num = 5
+      num = 4
 
       nTreesArray = np.logspace(0,num-1,num)
       maxDepthArray = np.arange(1,num+1)
@@ -99,6 +99,8 @@ if __name__=="__main__":
           j+=1
         i+=1
 
+      OverwriteStdout("Finished Training, making plots...")
+
       # %% Do plotting
       fig = plt.figure(figsize=(6, 6))
       ax = fig.add_subplot(111)
@@ -117,4 +119,4 @@ if __name__=="__main__":
           label = '%.3f' %scores[y, x]
           ax.text(x, y, label, color='black', ha='center', va='center')
 
-      plt.savefig("RegionGrid.png")
+      plt.savefig("RegionGrid.pdf")

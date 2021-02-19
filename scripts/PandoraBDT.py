@@ -21,6 +21,20 @@ import math
 
 from PandoraMVA import *
 
+def DrawVariablesDF(df, params, logY=False):
+    for column in df:
+        if column == 'Labels':
+            continue    
+        fig, ax = plt.subplots()
+        df.pivot(columns='Labels')[column].plot.hist(bins=50, alpha=0.5, color=params['signalCols'], edgecolor='k', density=True, ax=ax)
+        ax.legend(params['labelNames']);
+        ax.set_xlabel(column.replace("_", " "))
+
+        plt.tight_layout()
+        plt.savefig('Feature_' + column + '.png')
+        plt.savefig('Feature_' + column + '.pdf')
+        plt.show()
+        plt.close()
 
 def DrawVariables(X, Y, labels, logY=True, class_names=['Background', 'Signal']):
     plot_colors = ['r', 'b']
@@ -261,7 +275,7 @@ def FindOptimalSignificanceCut(bdtModel, X_train, Y_train, parameters):
     parameters['OptimalBinCut'] = optimalBinCut
     parameters['OptimalScoreCut'] = optimalScoreCut
 
-    plt.show()
+    #plt.show()
     plt.close()
 
 # --------------------------------------------------------------------------------------------------
@@ -336,4 +350,3 @@ def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters)
 
     print("KS Signal:     "+str(signalKSTest)+" with P value: "+str(ksSig))
     print("KS BackGround: "+str(backgroundKSTest)+" with P value: "+str(ksBck))
-    return ksSig, ksBck

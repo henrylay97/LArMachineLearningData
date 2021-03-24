@@ -21,7 +21,7 @@ import math
 
 from PandoraMVA import *
 
-def DrawVariablesDF(df, params, logY=False):
+def DrawVariablesDF(df, params, topdir=".", save=True):
     for column in df:
         if column == 'Labels':
             continue    
@@ -31,11 +31,13 @@ def DrawVariablesDF(df, params, logY=False):
         ax.set_xlabel(column.replace("_", " "))
 
         plt.tight_layout()
-        plt.savefig('Feature_' + column + '.png')
-        plt.savefig('Feature_' + column + '.pdf')
+        if save:
+            plt.savefig(topdir + 'Feature_' + column + '.png')
+            plt.savefig(topdir + 'Feature_' + column + '.pdf')
         plt.show()
         plt.close()
 
+        
 def DrawVariables(X, Y, labels, logY=True, class_names=['Background', 'Signal']):
     plot_colors = ['r', 'b']
     signal_definition = [0, 1]
@@ -103,6 +105,25 @@ def Correlation(df, label):
     plt.savefig(label.replace(" ", "_") + ".pdf", bbox_inches='tight')
     plt.show()
     plt.close()
+
+# --------------------------------------------------------------------------------------------------
+
+
+def Correlation(df, label, topdir=".", save=False):
+    plt.figure(figsize=(10, 10))
+    plt.title(label)
+
+    ax = sns.heatmap(df.corr(), cmap='coolwarm', vmax=1.0, vmin=-1.0,
+                     annot=True, square=True, fmt='.2g')
+
+    ax.invert_yaxis()
+
+    if save:
+        plt.savefig(topdir + '/' + label.replace(" ", "_") + ".png", bbox_inches='tight')
+        plt.savefig(topdir + '/' + label.replace(" ", "_") + ".pdf", bbox_inches='tight')
+    plt.show()
+    plt.close()
+
 
 # --------------------------------------------------------------------------------------------------
 
@@ -281,7 +302,7 @@ def FindOptimalSignificanceCut(bdtModel, X_train, Y_train, parameters):
 # --------------------------------------------------------------------------------------------------
 
 
-def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters):
+def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters, topDir=".", save=False, useWeights=False, weights_test):
     # Testing BDT Using Remainder of Training Sample
     test_results = bdtModel.decision_function(X_test)
     train_results = bdtModel.decision_function(X_train)
@@ -328,11 +349,22 @@ def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters)
     backgroundKSTest, ksBck = sci.ks_2samp(
         test_results_background, train_results_background)
 
-    plt.text(0.88, 0.65, "Sig Eff: {:.2%}\nBkg Rej: {:.2%}\nScore Cut: {:.2}\nSig P: {:.2}\nBck P: {:.2} "
-             .format(sigEff, bkgRej, parameters['OptimalScoreCut'], ksSig, ksBck),
-             horizontalalignment='center',
-             verticalalignment='center',
-             transform=ax.transAxes)
+    score = bdtModel.score(X_test,Y_test)
+
+    if useWeights :
+        scoreW = bdtModel.score(X_test,Y_test,sample_weight = weights_test)
+    
+        plt.text(0.83, 0.5, "Sig Eff: {:.2%}\nBkg Rej: {:.2%}\nScore Cut: {:.2}\n\nSig KS: {:.2}\nBack KS: {:.2}\nSig P: {:.2}\nBck P: {:.2}\n\nScore: {:.4}\nWeighted Score: {:.4} "
+                 .format(sigEff, bkgRej, parameters['OptimalScoreCut'], signalKSTest, backgroundKSTest, ksSig, ksBck, score, scoreW),
+                 horizontalalignment='center',
+                 verticalalignment='center',
+                 transform=ax.transAxes)
+    else :
+        plt.text(0.88, 0.5, "Sig Eff: {:.2%}\nBkg Rej: {:.2%}\nScore Cut: {:.2}\n\nSig KS: {:.2}\nBack KS: {:.2}\nSig P: {:.2}\nBck P: {:.2}\n\nScore: {:.4} "
+                 .format(sigEff, bkgRej, parameters['OptimalScoreCut'], signalKSTest, backgroundKSTest, ksSig, ksBck, score),
+                 horizontalalignment='center',
+                 verticalalignment='center',
+                 transform=ax.transAxes)
 
     x1, x2, y1, y2 = plt.axis()
     plt.axis((x1, x2, y1, y2 * 1.1))
@@ -340,13 +372,23 @@ def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters)
     plt.ylabel('Samples')
     plt.xlabel('Score')
     plt.tight_layout()
-    plt.savefig(title.replace(" ", "_") + '_NTrees_' +
-                str(parameters['nTrees']) + '_TreeDepth_' + str(parameters['TreeDepth']) + '.pdf')
-    plt.savefig(title.replace(" ", "_") + '_NTrees_' +
-                str(parameters['nTrees']) + '_TreeDepth_' + str(parameters['TreeDepth']) + '.pdf')
+
+    if save:
+        plt.savefig(topDir + '/' + title.replace(" ", "_") + '.pdf')
+        plt.savefig(topDir + '/' + title.replace(" ", "_") + '.png')
 
     plt.show()
     plt.close()
 
     print("KS Signal:     "+str(signalKSTest)+" with P value: "+str(ksSig))
     print("KS BackGround: "+str(backgroundKSTest)+" with P value: "+str(ksBck))
+
+    if useWeights :
+        txt = str(title.replace("Vertex Vertex ","").replace("Vertex Region ","").replace("_","").replace(" ","")) + \
+              ' & {score:.4} & {scoreW:.4} & {diff:.3} & {signalKSTest:.2} (p={ksSig:.2}) & {backgroundKSTest:.2} (p={ksBck:.2})'
+        print(txt.format(score=score*100, scoreW=scoreW*100, diff = (score - scoreW)*100, signalKSTest=signalKSTest, ksSig=ksSig, backgroundKSTest=backgroundKSTest, ksBck=ksBck))
+    else :
+        txt = str(title.replace("Vertex Vertex ","").replace("Vertex Region ","").replace("_","").replace(" ","")) + \
+              ' & {score:.4} & {signalKSTest:.2} (p={ksSig:.2}) & {backgroundKSTest:.2} (p={ksBck:.2})'
+        print(txt.format(score=score*100, signalKSTest=signalKSTest, ksSig=ksSig, backgroundKSTest=backgroundKSTest, ksBck=ksBck))
+

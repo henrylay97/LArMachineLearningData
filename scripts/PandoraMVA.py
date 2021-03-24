@@ -25,6 +25,21 @@ def LoadData(trainingFileName, delimiter=','):
 
 #--------------------------------------------------------------------------------------------------
 
+def RemoveFeature(data,col):
+    new=[]
+    ncols = len(data[0])
+    
+    for example in data:
+        features=[]
+        for i in [x for x in range(0,ncols) if x not in col] :
+            features.append(example[i])
+
+        new.append(features)
+        
+    return new
+
+#--------------------------------------------------------------------------------------------------
+
 def SplitTrainingSet(trainingSet, nFeatures):
     X=[] # features sets
     Y=[] # responses

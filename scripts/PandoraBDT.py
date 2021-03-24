@@ -36,6 +36,22 @@ def DrawVariablesDF(df, params, logY=False):
         plt.show()
         plt.close()
 
+def DrawVariablesDF(df, params, topdir):
+    for column in df:
+        if column == 'Labels':
+            continue    
+        fig, ax = plt.subplots()
+        df.pivot(columns='Labels')[column].plot.hist(bins=50, alpha=0.5, color=params['signalCols'], edgecolor='k', density=True, ax=ax)
+        ax.legend(params['labelNames']);
+        ax.set_xlabel(column.replace("_", " "))
+
+        plt.tight_layout()
+        plt.savefig(topdir + 'Feature_' + column + '.png')
+        plt.savefig(topdir + 'Feature_' + column + '.pdf')
+        plt.show()
+        plt.close()
+
+        
 def DrawVariables(X, Y, labels, logY=True, class_names=['Background', 'Signal']):
     plot_colors = ['r', 'b']
     signal_definition = [0, 1]
@@ -103,6 +119,24 @@ def Correlation(df, label):
     plt.savefig(label.replace(" ", "_") + ".pdf", bbox_inches='tight')
     plt.show()
     plt.close()
+
+# --------------------------------------------------------------------------------------------------
+
+
+def Correlation(df, label, topdir):
+    plt.figure(figsize=(10, 10))
+    plt.title(label)
+
+    ax = sns.heatmap(df.corr(), cmap='coolwarm', vmax=1.0, vmin=-1.0,
+                     annot=True, square=True, fmt='.2g')
+
+    ax.invert_yaxis()
+
+    plt.savefig(topdir + '/' + label.replace(" ", "_") + ".png", bbox_inches='tight')
+    plt.savefig(topdir + '/' + label.replace(" ", "_") + ".pdf", bbox_inches='tight')
+    plt.show()
+    plt.close()
+
 
 # --------------------------------------------------------------------------------------------------
 

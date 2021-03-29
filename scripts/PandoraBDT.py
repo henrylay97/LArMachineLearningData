@@ -36,7 +36,7 @@ def DrawVariablesDF(df, params, logY=False):
         plt.show()
         plt.close()
 
-def DrawVariablesDF(df, params, topdir):
+def DrawVariablesDF(df, params, topdir, save=True):
     for column in df:
         if column == 'Labels':
             continue    
@@ -46,8 +46,9 @@ def DrawVariablesDF(df, params, topdir):
         ax.set_xlabel(column.replace("_", " "))
 
         plt.tight_layout()
-        plt.savefig(topdir + 'Feature_' + column + '.png')
-        plt.savefig(topdir + 'Feature_' + column + '.pdf')
+        if save:
+            plt.savefig(topdir + 'Feature_' + column + '.png')
+            plt.savefig(topdir + 'Feature_' + column + '.pdf')
         plt.show()
         plt.close()
 
@@ -123,7 +124,7 @@ def Correlation(df, label):
 # --------------------------------------------------------------------------------------------------
 
 
-def Correlation(df, label, topdir):
+def Correlation(df, label, topdir, save=False):
     plt.figure(figsize=(10, 10))
     plt.title(label)
 
@@ -132,8 +133,9 @@ def Correlation(df, label, topdir):
 
     ax.invert_yaxis()
 
-    plt.savefig(topdir + '/' + label.replace(" ", "_") + ".png", bbox_inches='tight')
-    plt.savefig(topdir + '/' + label.replace(" ", "_") + ".pdf", bbox_inches='tight')
+    if save:
+        plt.savefig(topdir + '/' + label.replace(" ", "_") + ".png", bbox_inches='tight')
+        plt.savefig(topdir + '/' + label.replace(" ", "_") + ".pdf", bbox_inches='tight')
     plt.show()
     plt.close()
 
@@ -315,7 +317,7 @@ def FindOptimalSignificanceCut(bdtModel, X_train, Y_train, parameters):
 # --------------------------------------------------------------------------------------------------
 
 
-def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters):
+def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters, topDir, save=False):
     # Testing BDT Using Remainder of Training Sample
     test_results = bdtModel.decision_function(X_test)
     train_results = bdtModel.decision_function(X_train)
@@ -374,10 +376,12 @@ def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters)
     plt.ylabel('Samples')
     plt.xlabel('Score')
     plt.tight_layout()
-    plt.savefig(title.replace(" ", "_") + '_NTrees_' +
-                str(parameters['nTrees']) + '_TreeDepth_' + str(parameters['TreeDepth']) + '.pdf')
-    plt.savefig(title.replace(" ", "_") + '_NTrees_' +
-                str(parameters['nTrees']) + '_TreeDepth_' + str(parameters['TreeDepth']) + '.pdf')
+
+    if save:
+        plt.savefig(topDir + '/' + title.replace(" ", "_") + '_NTrees_' +
+                    str(parameters['nTrees']) + '_TreeDepth_' + str(parameters['TreeDepth']) + '.pdf')
+        plt.savefig(topDir + '/' + title.replace(" ", "_") + '_NTrees_' +
+                    str(parameters['nTrees']) + '_TreeDepth_' + str(parameters['TreeDepth']) + '.png')
 
     plt.show()
     plt.close()

@@ -364,8 +364,10 @@ def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters,
     backgroundKSTest, ksBck = sci.ks_2samp(
         test_results_background, train_results_background)
 
-    plt.text(0.88, 0.65, "Sig Eff: {:.2%}\nBkg Rej: {:.2%}\nScore Cut: {:.2}\nSig P: {:.2}\nBck P: {:.2} "
-             .format(sigEff, bkgRej, parameters['OptimalScoreCut'], ksSig, ksBck),
+    score = bdtModel.score(X_test,Y_test)
+
+    plt.text(0.88, 0.5, "Sig Eff: {:.2%}\nBkg Rej: {:.2%}\nScore Cut: {:.2}\n\nSig KS: {:.2}\nBack KS: {:.2}\nSig P: {:.2}\nBck P: {:.2}\n\nScore: {:.4} "
+             .format(sigEff, bkgRej, parameters['OptimalScoreCut'], signalKSTest, backgroundKSTest, ksSig, ksBck, score),
              horizontalalignment='center',
              verticalalignment='center',
              transform=ax.transAxes)

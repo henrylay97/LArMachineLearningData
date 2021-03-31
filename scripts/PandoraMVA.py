@@ -40,6 +40,17 @@ def RemoveFeature(data,col):
 
 #--------------------------------------------------------------------------------------------------
 
+def GetWeights(data,col):
+    weights = []
+    ncols = len(data[0])
+
+    for example in data:
+        weights.append(example[col])
+
+    return weights
+
+#--------------------------------------------------------------------------------------------------
+
 def SplitTrainingSet(trainingSet, nFeatures):
     X=[] # features sets
     Y=[] # responses
@@ -65,6 +76,17 @@ def Randomize(X, Y, setSameSeed=False):
 
 #--------------------------------------------------------------------------------------------------
 
+def Randomize(X, Y, Z, setSameSeed=False):
+    if setSameSeed:
+        np.random.seed(0)
+
+    z = np.array(Z)
+
+    order = np.random.permutation(Y.size)
+    return X[order], Y[order], z[order]
+
+#--------------------------------------------------------------------------------------------------
+
 def Sample(X, Y, testFraction=0.1):
     trainSize = int((1.0 - testFraction) * Y.size)
 
@@ -74,6 +96,20 @@ def Sample(X, Y, testFraction=0.1):
     Y_test  = Y[trainSize:]
 
     return X_train, Y_train, X_test, Y_test
+
+#--------------------------------------------------------------------------------------------------
+
+def Sample(X, Y, Z, testFraction=0.1):
+    trainSize = int((1.0 - testFraction) * Y.size)
+
+    X_train = X[:trainSize]
+    Y_train = Y[:trainSize]
+    Z_train = Z[:trainSize]
+    X_test  = X[trainSize:]
+    Y_test  = Y[trainSize:]
+    Z_test  = Z[trainSize:]
+
+    return X_train, Y_train, Z_train, X_test, Y_test, Z_test
 
 #--------------------------------------------------------------------------------------------------
 

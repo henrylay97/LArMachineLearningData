@@ -45,7 +45,7 @@ def GetWeights(data,col):
     ncols = len(data[0])
 
     for example in data:
-        weights.append(example[col])
+        weights.append(1/example[col])
 
     return weights
 

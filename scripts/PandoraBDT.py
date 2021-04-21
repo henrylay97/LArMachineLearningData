@@ -380,13 +380,92 @@ def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters,
     plt.tight_layout()
 
     if save:
-        plt.savefig(topDir + '/' + title.replace(" ", "_") + '_NTrees_' +
-                    str(parameters['nTrees']) + '_TreeDepth_' + str(parameters['TreeDepth']) + '.pdf')
-        plt.savefig(topDir + '/' + title.replace(" ", "_") + '_NTrees_' +
-                    str(parameters['nTrees']) + '_TreeDepth_' + str(parameters['TreeDepth']) + '.png')
+        plt.savefig(topDir + '/' + title.replace(" ", "_") + '.pdf')
+        plt.savefig(topDir + '/' + title.replace(" ", "_") + '.png')
 
     plt.show()
     plt.close()
 
     print("KS Signal:     "+str(signalKSTest)+" with P value: "+str(ksSig))
     print("KS BackGround: "+str(backgroundKSTest)+" with P value: "+str(ksBck))
+
+    txt = str(title.replace("Vertex Vertex ","").replace("Vertex Region ","").replace("_","").replace(" ","")) + ' & {score:.4} & {signalKSTest:.2} (p={ksSig:.2}) & {backgroundKSTest:.2} (p={ksBck:.2})'
+    print(txt.format(score=score*100, signalKSTest=signalKSTest, ksSig=ksSig, backgroundKSTest=backgroundKSTest, ksBck=ksBck))
+
+# --------------------------------------------------------------------------------------------------
+
+def PlotBdtScoresWeight(bdtModel, X_test, Y_test, weights_test, X_train, Y_train, title, parameters, topDir, save=False):
+    # Testing BDT Using Remainder of Training Sample
+    test_results = bdtModel.decision_function(X_test)
+    train_results = bdtModel.decision_function(X_train)
+
+    test_results_signal = test_results[Y_test == 1]
+    train_results_signal = train_results[Y_train == 1]
+    test_results_background = test_results[Y_test == 0]
+    train_results_background = train_results[Y_train == 0]
+
+    fig, ax = plt.subplots()
+
+    ax.set_title('Overtraining Test: ' + title)
+
+    sigEff = 0
+    bkgRej = 0
+
+    for i, n, g in zip(parameters['SignalDefinition'], parameters['ClassNames'], parameters['PlotColors']):
+        entries, bins, patches = ax.hist(train_results[Y_train == i],
+                                         bins=parameters['nBins'],
+                                         range=(-1, 1),
+                                         facecolor=g,
+                                         label='%s' % n,
+                                         alpha=.5,
+                                         density=True,
+                                         edgecolor='k')
+
+        counts, bin_edges = np.histogram(test_results[Y_test == i],
+                                         range=(-1, 1), bins=parameters['nBins'], density=True)
+
+        bin_centres = (bin_edges[:-1] + bin_edges[1:])/2.
+        ax.errorbar(bin_centres, counts, fmt='o', color=g)
+
+        if i == 1:
+            nEntries = sum(counts)
+            nEntriesPassing = sum(counts[parameters['OptimalBinCut']:])
+            sigEff = nEntriesPassing/nEntries
+        elif i == 0:
+            nEntries = sum(counts)
+            nEntriesFailing = sum(counts[:parameters['OptimalBinCut']])
+            bkgRej = nEntriesFailing/nEntries
+
+    signalKSTest, ksSig = sci.ks_2samp(
+        test_results_signal, train_results_signal)
+    backgroundKSTest, ksBck = sci.ks_2samp(
+        test_results_background, train_results_background)
+    
+    score = bdtModel.score(X_test,Y_test)
+    scoreW = bdtModel.score(X_test,Y_test,sample_weight = weights_test)
+
+    plt.text(0.83, 0.5, "Sig Eff: {:.2%}\nBkg Rej: {:.2%}\nScore Cut: {:.2}\n\nSig KS: {:.2}\nBack KS: {:.2}\nSig P: {:.2}\nBck P: {:.2}\n\nScore: {:.4}\nWeighted Score: {:.4} "
+             .format(sigEff, bkgRej, parameters['OptimalScoreCut'], signalKSTest, backgroundKSTest, ksSig, ksBck, score, scoreW),
+             horizontalalignment='center',
+             verticalalignment='center',
+             transform=ax.transAxes)
+
+    x1, x2, y1, y2 = plt.axis()
+    plt.axis((x1, x2, y1, y2 * 1.1))
+    plt.legend(loc='upper right')
+    plt.ylabel('Samples')
+    plt.xlabel('Score')
+    plt.tight_layout()
+
+    if save:
+        plt.savefig(topDir + '/' + title.replace(" ", "_") + '.pdf')
+        plt.savefig(topDir + '/' + title.replace(" ", "_") + '.png')
+
+    plt.show()
+    plt.close()
+
+    print("KS Signal:     "+str(signalKSTest)+" with P value: "+str(ksSig))
+    print("KS BackGround: "+str(backgroundKSTest)+" with P value: "+str(ksBck))
+
+    txt = str(title.replace("Vertex Vertex ","").replace("Vertex Region ","").replace("_","").replace(" ","")) + ' & {score:.4} & {scoreW:.4} & {diff:.3} & {signalKSTest:.2} (p={ksSig:.2}) & {backgroundKSTest:.2} (p={ksBck:.2})'
+    print(txt.format(score=score*100, scoreW=scoreW*100, diff = (score - scoreW)*100, signalKSTest=signalKSTest, ksSig=ksSig, backgroundKSTest=backgroundKSTest, ksBck=ksBck))

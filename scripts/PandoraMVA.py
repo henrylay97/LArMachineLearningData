@@ -33,7 +33,7 @@ def RemoveFeature(data,col):
         features=[]
         for i in [x for x in range(0,ncols) if x not in col] :
             features.append(example[i])
-
+            
         new.append(features)
         
     return new
@@ -48,6 +48,30 @@ def GetWeights(data,col):
         weights.append(1/example[col])
 
     return weights
+
+#--------------------------------------------------------------------------------------------------
+
+def GetVetos(data,variable=91,cut=0.3):
+    vetos = []
+    ncols = len(data[0])
+
+    for example in data:
+        if example[variable] < cut :
+            vetos.append(1)
+        else :
+            vetos.append(0)
+
+    return vetos
+
+#--------------------------------------------------------------------------------------------------
+
+def Filter(X,Y,Z,V):
+
+    x = X[V!=1]
+    y = Y[V!=1]
+    z = Z[V!=1]
+    
+    return x, y, z
 
 #--------------------------------------------------------------------------------------------------
 
@@ -76,14 +100,15 @@ def Randomize(X, Y, setSameSeed=False):
 
 #--------------------------------------------------------------------------------------------------
 
-def Randomize(X, Y, Z, setSameSeed=False):
+def Randomize(X, Y, Z, V, setSameSeed=False):
     if setSameSeed:
         np.random.seed(0)
 
     z = np.array(Z)
+    v = np.array(V)
 
     order = np.random.permutation(Y.size)
-    return X[order], Y[order], z[order]
+    return X[order], Y[order], z[order], v[order]
 
 #--------------------------------------------------------------------------------------------------
 
@@ -99,17 +124,18 @@ def Sample(X, Y, testFraction=0.1):
 
 #--------------------------------------------------------------------------------------------------
 
-def Sample(X, Y, Z, testFraction=0.1):
+def Sample(X, Y, Z, V, testFraction=0.1):
     trainSize = int((1.0 - testFraction) * Y.size)
 
     X_train = X[:trainSize]
     Y_train = Y[:trainSize]
     Z_train = Z[:trainSize]
+    V_train = V[:trainSize]
     X_test  = X[trainSize:]
     Y_test  = Y[trainSize:]
     Z_test  = Z[trainSize:]
 
-    return X_train, Y_train, Z_train, X_test, Y_test, Z_test
+    return X_train, Y_train, Z_train, V_train, X_test, Y_test, Z_test
 
 #--------------------------------------------------------------------------------------------------
 

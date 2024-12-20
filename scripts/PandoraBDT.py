@@ -329,7 +329,7 @@ def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters,
 
     fig, ax = plt.subplots()
 
-    ax.set_title('Overtraining Test: ' + title)
+#    ax.set_title('Overtraining Test: ' + title)
 
     sigEff = 0
     bkgRej = 0
@@ -366,17 +366,24 @@ def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters,
 
     score = bdtModel.score(X_test,Y_test)
 
-    plt.text(0.88, 0.5, "Sig Eff: {:.2%}\nBkg Rej: {:.2%}\nScore Cut: {:.2}\n\nSig KS: {:.2}\nBack KS: {:.2}\nSig P: {:.2}\nBck P: {:.2}\n\nScore: {:.4} "
-             .format(sigEff, bkgRej, parameters['OptimalScoreCut'], signalKSTest, backgroundKSTest, ksSig, ksBck, score),
+ #   plt.text(0.88, 0.5, "Sig Eff: {:.2%}\nBkg Rej: {:.2%}\nScore Cut: {:.2}\n\nSig KS: {:.2}\nBack KS: {:.2}\nSig P: {:.2}\nBck P: {:.2}\n\nScore: {:.4} "
+ #            .format(sigEff, bkgRej, parameters['OptimalScoreCut'], signalKSTest, backgroundKSTest, ksSig, ksBck, score),
+ #            horizontalalignment='center',
+ #            verticalalignment='center',
+ #            transform=ax.transAxes)
+
+    plt.text(0.25, 0.85, "Validation Accuracy: 80.5%",
              horizontalalignment='center',
              verticalalignment='center',
              transform=ax.transAxes)
 
+    print("Score: " + str(score))
+
     x1, x2, y1, y2 = plt.axis()
     plt.axis((x1, x2, y1, y2 * 1.1))
     plt.legend(loc='upper right')
-    plt.ylabel('Samples')
-    plt.xlabel('Score')
+    plt.ylabel('Relative number of vertex candidates')
+    plt.xlabel('Vertex BDT Score')
     plt.tight_layout()
 
     if save:
@@ -389,8 +396,8 @@ def PlotBdtScores(bdtModel, X_test, Y_test, X_train, Y_train, title, parameters,
     print("KS Signal:     "+str(signalKSTest)+" with P value: "+str(ksSig))
     print("KS BackGround: "+str(backgroundKSTest)+" with P value: "+str(ksBck))
 
-    txt = str(title.replace("Vertex Vertex ","").replace("Vertex Region ","").replace("_","").replace(" ","")) + ' & {score:.4} & {signalKSTest:.2} (p={ksSig:.2}) & {backgroundKSTest:.2} (p={ksBck:.2})'
-    print(txt.format(score=score*100, signalKSTest=signalKSTest, ksSig=ksSig, backgroundKSTest=backgroundKSTest, ksBck=ksBck))
+#    txt = str(title.replace("Vertex Vertex ","").replace("Vertex Region ","").replace("_","").replace(" ","")) + ' & {score:.4} & {signalKSTest:.2} (p={ksSig:.2}) & {backgroundKSTest:.2} (p={ksBck:.2})'
+#    print(txt.format(score=score*100, signalKSTest=signalKSTest, ksSig=ksSig, backgroundKSTest=backgroundKSTest, ksBck=ksBck))
 
 # --------------------------------------------------------------------------------------------------
 
@@ -406,7 +413,7 @@ def PlotBdtScoresWeight(bdtModel, X_test, Y_test, weights_test, X_train, Y_train
 
     fig, ax = plt.subplots()
 
-    ax.set_title('Overtraining Test: ' + title)
+#    ax.set_title('Overtraining Test: ' + title)
 
     sigEff = 0
     bkgRej = 0
@@ -444,17 +451,24 @@ def PlotBdtScoresWeight(bdtModel, X_test, Y_test, weights_test, X_train, Y_train
     score = bdtModel.score(X_test,Y_test)
     scoreW = bdtModel.score(X_test,Y_test,sample_weight = weights_test)
 
-    plt.text(0.83, 0.5, "Sig Eff: {:.2%}\nBkg Rej: {:.2%}\nScore Cut: {:.2}\n\nSig KS: {:.2}\nBack KS: {:.2}\nSig P: {:.2}\nBck P: {:.2}\n\nScore: {:.4}\nWeighted Score: {:.4} "
-             .format(sigEff, bkgRej, parameters['OptimalScoreCut'], signalKSTest, backgroundKSTest, ksSig, ksBck, score, scoreW),
+#    plt.text(0.83, 0.5, "Sig Eff: {:.2%}\nBkg Rej: {:.2%}\nScore Cut: {:.2}\n\nSig KS: {:.2}\nBack KS: {:.2}\nSig P: {:.2}\nBck P: {:.2}\n\nScore: {:.4}\nWeighted Score: {:.4} "
+#             .format(sigEff, bkgRej, parameters['OptimalScoreCut'], signalKSTest, backgroundKSTest, ksSig, ksBck, score, scoreW),
+#             horizontalalignment='center',
+#             verticalalignment='center',
+#             transform=ax.transAxes)
+
+    plt.text(0.25, 0.85, "Validation Accuracy: 80.5%",
              horizontalalignment='center',
              verticalalignment='center',
              transform=ax.transAxes)
 
+    print("Score: " + str(score))
+
     x1, x2, y1, y2 = plt.axis()
     plt.axis((x1, x2, y1, y2 * 1.1))
     plt.legend(loc='upper right')
-    plt.ylabel('Samples')
-    plt.xlabel('Score')
+    plt.ylabel('Relative number of vertex candidates')
+    plt.xlabel('Vertex BDT Score')
     plt.tight_layout()
 
     if save:
@@ -467,5 +481,5 @@ def PlotBdtScoresWeight(bdtModel, X_test, Y_test, weights_test, X_train, Y_train
     print("KS Signal:     "+str(signalKSTest)+" with P value: "+str(ksSig))
     print("KS BackGround: "+str(backgroundKSTest)+" with P value: "+str(ksBck))
 
-    txt = str(title.replace("Vertex Vertex ","").replace("Vertex Region ","").replace("_","").replace(" ","")) + ' & {score:.4} & {scoreW:.4} & {diff:.3} & {signalKSTest:.2} (p={ksSig:.2}) & {backgroundKSTest:.2} (p={ksBck:.2})'
-    print(txt.format(score=score*100, scoreW=scoreW*100, diff = (score - scoreW)*100, signalKSTest=signalKSTest, ksSig=ksSig, backgroundKSTest=backgroundKSTest, ksBck=ksBck))
+#    txt = str(title.replace("Vertex Vertex ","").replace("Vertex Region ","").replace("_","").replace(" ","")) + ' & {score:.4} & {scoreW:.4} & {diff:.3} & {signalKSTest:.2} (p={ksSig:.2}) & {backgroundKSTest:.2} (p={ksBck:.2})'
+#    print(txt.format(score=score*100, scoreW=scoreW*100, diff = (score - scoreW)*100, signalKSTest=signalKSTest, ksSig=ksSig, backgroundKSTest=backgroundKSTest, ksBck=ksBck))
